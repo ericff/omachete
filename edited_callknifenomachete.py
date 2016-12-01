@@ -1,5 +1,7 @@
 import re, os, glob, subprocess
 
+from distutils.dir_util import copy_tree
+
  
 WORK_DIR = os.getcwd()
 #########################################################################
@@ -66,57 +68,39 @@ with open(logfile, 'w') as ff:
     
 # main directory to be used when running the knife:
 # knifedir = "~/gl/circularRNApipeline_Standalone"
-knifedir = "/srv/software/knife/circularRNApipeline_Standalone"
+# knifedir = "/srv/software/knife/circularRNApipeline_Standalone"
+cirpipedir = "/srv/software/knife/circularRNApipeline_Standalone"
 
-    
-    
-targetdir_list = [knifedir + "/index", knifedir + "/index", knifedir + "/denovo_scripts", knifedir + "/denovo_scripts/index"]
-    
-# check that there is a directory called circularRNApipeline_Standalone and all the subdirectories; there should be!
+copy_tree(cirpipedir, WORK_DIR)
 
-if not os.path.isdir(knifedir):
-    os.makedirs(knifedir)
+knifedir = WORK_DIR
+
+targetdir_list = [knifedir + "/index", knifedir + "/denovo_scripts", knifedir + "/denovo_scripts/index"]
+    
+# check that all the subdirectories are there, as they should be!
+# these should have been made beforehand, and should have appropriate files in them:
+# files starting with infilebt2 and infilefastas should be in /index
+#   and the prefixes "infilebt2" and "infilefastas" should be removed
+# files starting with infilegtf should be in /denovo_scripts
+#   and the prefix "infilegtf" should be removed
+# files starting with infilebt1 should be in /denovo_scripts/index
+#   and the prefix "infilebt1" should be removed
+
     
 thisdir = targetdir_list[0]
 if not os.path.exists(thisdir):
-    os.makedirs(thisdir)
+    raise ValueError("Error: directory " + thisdir + " does not exist.")
+
+thisdir = targetdir_list[1]
+if not os.path.exists(thisdir):
+    raise ValueError("Error: directory " + thisdir + " does not exist.")
 
 thisdir = targetdir_list[2]
 if not os.path.exists(thisdir):
-    os.makedirs(thisdir)
-
-thisdir = targetdir_list[3]
-if not os.path.exists(thisdir):
-    os.makedirs(thisdir)
-
-# Input file names are in an unusual format so they are easy to select when doing a run on
-#   seven bridges. They should start in the home directory, as copies, because
-#   they are entered as stage inputs.
-#   Move them to the directories where KNIFE
-#   expects them to be, then change their names.
-
-# make function to do this for each of the four types of files
-#  prefix is one of "infilebt1", "infilebt2", "infilefastas", or "infilegtf"
-def move_and_rename(prefix, targetdir):
-    globpattern = prefix + "*"
-    matching_files = glob.glob(globpattern)
-    if (len(matching_files)>= 1):
-        for thisfile in matching_files:
-            fullpatholdfile = WORK_DIR + "/" + thisfile
-            fullpathnewfile = targetdir + "/" + re.sub(pattern=prefix, repl="", string= thisfile)
-            subprocess.check_call(["mv", fullpatholdfile, fullpathnewfile])
-            with open(logfile, 'a') as ff:
-                ff.write('mv '+ fullpatholdfile + ' ' + fullpathnewfile + '\n')
-
-#        os.rename(fullpatholdfile, fullpathnewfile)
-
-prefix_list = ["infilebt2", "infilefastas", "infilegtf", "infilebt1"]
-
-for ii in range(4):
-    move_and_rename(prefix=prefix_list[ii], targetdir= targetdir_list[ii])
+    raise ValueError("Error: directory " + thisdir + " does not exist.")
 
     
-# cd into the knife directory
+# cd into the knife directory; should not really be necessary
 os.chdir(knifedir)
 
 with open(logfile, 'a') as ff:
@@ -228,7 +212,7 @@ os.chdir(WORK_DIR)
 
 #############################################################################
 # Get all files in either circReads/glmReport or circReads/reports or sampleStats/
-# zzxx
+# 
 # tar should unpack files as relative to the output directory
 #  so, e.g. at the top level, it will create directories like circReads/glmReports, ...
 #############################################################################
